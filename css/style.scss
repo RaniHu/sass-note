@@ -1,0 +1,246 @@
+@charset "UTF-8";
+//1.变量必须是$开头，后面紧跟变量名
+//普通变量定以后可在全局范围内使用
+$myColor: red;
+p {
+  color: $myColor;
+}
+
+a {
+  color: $myColor;
+}
+
+//默认变量仅需在值后添加!default,在进行组件化开发的时候会非常有用
+//在默认变量之前重新声明下变量就可以覆盖
+$fontHeight: 2;                           //全局变量
+$fontHeight: 1.5 !default;
+body {
+  line-height: $fontHeight;
+  span{
+    $fontWeight:600px;                   //局部变量(选择器内、函数内、混合宏内)
+    label{
+      font-weight: $fontWeight;
+    }
+  }
+}
+
+//特殊变量以#{$variables}形式使用
+$borderDirection: top !default;
+a {
+  border-#{$borderDirection}: 1px solid blue;
+}
+
+//多值变量分为list型(类似js中的数组)和map型
+//nth($var,$index)来取值
+$color: #fff #5f3332 !default;
+a {
+  color: nth($color, 1);
+}
+
+h1 {
+  color: nth($color, 2);
+}
+
+//2.嵌套
+//选择器嵌套可使用&表示父元素选择器
+a {
+  background-color: #5f3332;
+  &:hover {
+    //此处的&表示a标签
+    background-color: antiquewhite;
+  }
+}
+
+ul {
+  height: 30px;
+  li {
+    width: 20px;
+    a {
+      line-height: 10px;
+    }
+  }
+}
+
+//属性嵌套指的是有些属性拥有同一个开始单词
+//以下仅为例子，border不建议这么写
+.nav{
+  border:{
+    style:solid;
+    left: {
+      width:2px;
+      color: #5f3332;
+    }
+    top:{
+      width:1px;
+      color:#532433;
+    }
+  }
+}
+
+//@at-root跳出嵌套   sass中默认所有的嵌套，继承所有上级选择器
+ul{
+  height: 20px;
+  li{
+    @at-root li{          //此处的li标签跳出了ul，高度为22px
+      height: 22px;
+    }
+
+  }
+}
+
+
+//3.@mixin混合宏(类似于function)，可以传递参数，参数名以$开头，多个参数用逗号分开，可以给参数设置默认值
+//声明的@mixin，通过@include来调用
+//如果你的代码块中涉及到变量，建议使用混合宏来创建相同的代码块
+//无参数的mixin
+@mixin myBtn{
+  color: blue;
+  display: block;
+}
+.btn{
+  @include myBtn;
+}
+
+//不带值的参数
+@mixin border-radius($radius){
+  -webkit-border-radius: $radius;
+  border-radius: $radius;
+}
+
+.content{
+  @include border-radius(5px);
+}
+
+
+//带参数的mixin
+@mixin opacity($opacity:50){
+  opacity: $opacity/100;
+  filter:alpha(opacity=$opacity);
+}
+
+.header{
+  @include opacity(70)  //传递参数
+}
+.foot{
+  @include opacity;     //使用默认值
+}
+
+//带多个参数的mixin
+@mixin center($width,$height){
+  width: $width;
+  height: $height;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin-top: -($height) / 2;
+  margin-left: -($width) / 2;
+}
+
+.main{
+  @include center(300px,200px)          //include传入的参数小于mixin参数时，按顺序显示，不足的使用默认值
+}
+
+
+//4.继承  sass中选择器继承可以让选择器继承另一选择器的全部样式，使用关键词@extend，后紧跟要继承的选择器
+//继承是首先有一个基类存在，不管调用与不调用，基类的样式都将会出现在编译出来的 CSS 代码中
+h3{
+  padding: 10px;
+  color: #f54535;
+}
+span{
+  @extend h3;
+  height: 10px;
+}
+
+//占位选择器   因为Sass 在调用相同的混合宏(mixin)时，并不能智能的将相同的样式代码块合并在一起。
+//%占位符是独立定义，不调用的时候是不会在 CSS 中产生任何代码；
+%menu{
+  margin-bottom: 5px;
+}
+
+.article {
+  @extend %menu;
+  width: 200px;
+  height: 100px;
+  background-color: aquamarine;
+  a {
+    @extend %menu
+  }
+}
+
+
+//5.函数@function
+//颜色中使用lighten($color,$amount),darken($color,$amount)，第一个参数为颜色值，第二个为百分比
+$baseFont: 14px !default;
+$baseColor: #eee533;
+@function   fontSize($px) {
+  @return $px/$baseFont*1rem;
+}
+
+.sidebar{
+  font-size: fontSize(14px);
+  color: darken($baseColor,17%);
+  background-color: lighten($baseColor,10%)
+}
+
+
+//6.条件判断及循环
+//if判断可以根据条件来处理样式块，如果条件为 true 返回一个样式块，反之 false 返回另一个样式块
+@mixin blockOrhidden($boolean:ture){
+  @if $boolean{
+    display: block;;
+  }
+  @else {
+    display: none;
+  }
+}
+
+.block{
+  @include blockOrhidden;
+}
+.hide{
+  @include blockOrhidden(false);
+}
+
+//for循环在sass中有两种方式
+//for  $a  from  <start>  through  <end>  (包含end最后一个数)
+//for  $a  from  <start>  to       <end>  (不包含end最后一个数)
+@for $i from 1 through 3{
+  .item-#{$i}{
+    width: 2em*$i;
+  }
+}
+
+//while循环直到表达式值为 false 时停止循环
+$number:5;
+$num-width:20px;
+@while $number > 0{
+  .num-#{$number} {
+    width: $num-width + $number;
+  }
+  $number : $number - 1 ;
+}
+.fruit{
+  width: 100px;
+}
+
+//each循环就是去遍历一个列表，在列表中取出对应的值
+//@each  $var  in  <list>
+$list:apple banana peach lemon;
+  @each $fruit in $list {
+    .photo-#{$fruit} {
+      background: url("image/#{$fruit}.png") no-repeat;
+    }
+  }
+
+//@each $var in <map>
+$heading:(h1:2em , h2:3em ,h3:6em);
+@each $header , $size in $heading {
+  #{$header} {
+      font-size: $size;
+  }
+}
+
+
+//@import导入文件都可以忽略后缀名
+@import "base";
